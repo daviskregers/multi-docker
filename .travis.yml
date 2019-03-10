@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  # bulid tests
+  - docker build -t daviskregers/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  # run tests
+  - docker run daviskregers/react-test npm test -- --coverage
+
+after_success:
+  # build production images
+  - docker build -t daviskregers/multi-client ./client
+  - docker build -t daviskregers/multi-nginx ./nginx
+  - docker build -t daviskregers/multi-server ./server
+  - docker build -t daviskregers/multi-worker ./worker
+  # Login to docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" -- password-stdin
+  # Take images and push to docker hub
+  - docker push daviskregers/multi-client
+  - docker push daviskregers/multi-nginx
+  - docker push daviskregers/multi-server
+  - docker push daviskregers/multi-worker
